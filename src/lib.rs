@@ -4,12 +4,27 @@ use pumpkin_plugin_api::command::{Command, CommandSender, ConsumedArgs};
 use pumpkin_plugin_api::permission::{Permission, PermissionDefault};
 use pumpkin_plugin_api::Server;
 use pumpkin_plugin_api::text::TextComponent;
+use pumpkin_plugin_api::events::{EventData, EventHandler, EventPriority, PlayerJoinEvent};
 
 use pumpkin_plugin_api::common::NamedColor;
 use pumpkin_plugin_api::common::RgbColor;
 
 
 use tracing::*;
+
+
+struct OnPlayerJoin;
+
+impl EventHandler<PlayerJoinEvent> for OnPlayerJoin {
+    fn handle(&self, _server: Server, mut event: EventData<PlayerJoinEvent>) -> EventData<PlayerJoinEvent> {
+        info!("Testoksjdksndksanjdkjd");
+        let name = event.player.get_name();
+        let message: TextComponent = TextComponent::text(&format!("{} joined the server", name));
+        message.color_rgb(RgbColor { r: 0x00, g: 0x99, b: 0xFF });
+        event.join_message = message;
+        event
+    }
+}
 
 struct TestCommandHandler;
 
@@ -79,6 +94,12 @@ impl Plugin for HelloPlugin {
 
     fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
         info!("Hello from the example plugin!");
+
+        context.register_event_handler::<PlayerJoinEvent, _>(
+            OnPlayerJoin,
+            EventPriority::Normal,
+            true,
+        )?;
         
 
         context.register_permission(&Permission {
