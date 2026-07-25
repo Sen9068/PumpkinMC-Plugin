@@ -1,10 +1,11 @@
 use pumpkin_plugin_api::commands::CommandHandler;
+use pumpkin_plugin_api::player::Player;
 use pumpkin_plugin_api::{Context, Plugin, PluginMetadata, permission};
 use pumpkin_plugin_api::command::{Command, CommandSender, ConsumedArgs};
 use pumpkin_plugin_api::permission::{Permission, PermissionDefault};
 use pumpkin_plugin_api::Server;
 use pumpkin_plugin_api::text::TextComponent;
-use pumpkin_plugin_api::events::{EventData, EventHandler, EventPriority, PlayerJoinEvent};
+use pumpkin_plugin_api::events::{EventData, EventHandler, EventPriority, PlayerJoinEvent, PlayerLeaveEvent};
 
 use pumpkin_plugin_api::common::NamedColor;
 use pumpkin_plugin_api::common::RgbColor;
@@ -22,6 +23,19 @@ impl EventHandler<PlayerJoinEvent> for OnPlayerJoin {
         let message: TextComponent = TextComponent::text(&format!("{} joined the server", name));
         message.color_rgb(RgbColor { r: 0x00, g: 0x99, b: 0xFF });
         event.join_message = message;
+        event
+    }
+}
+
+
+struct OnPlayerLeave;
+
+impl EventHandler<PlayerLeaveEvent> for OnPlayerLeave {
+    fn handle(&self, _server: Server, mut event: EventData<PlayerLeaveEvent>) -> EventData<PlayerLeaveEvent> {
+        let name = event.player.get_name();
+        let message: TextComponent = TextComponent::text(&format!("{} left the server", name));
+        message.color_rgb(RgbColor { r:0x00, g: 0x99, b: 0xFF });
+        event.leave_message = message;
         event
     }
 }
@@ -99,6 +113,13 @@ impl Plugin for HelloPlugin {
             OnPlayerJoin,
             EventPriority::Normal,
             true,
+        )?;
+
+        context.register_event_handler::<PlayerLeaveEvent, OnPlayerLeave>(
+            OnPlayerLeave,
+            EventPriority::Normal,
+            true,
+
         )?;
         
 
