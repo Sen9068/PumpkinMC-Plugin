@@ -6,23 +6,44 @@ use pumpkin_plugin_api::permission::{Permission, PermissionDefault};
 use pumpkin_plugin_api::Server;
 use pumpkin_plugin_api::text::TextComponent;
 use pumpkin_plugin_api::events::{EventData, EventHandler, EventPriority, PlayerJoinEvent, PlayerLeaveEvent};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
+
 
 use pumpkin_plugin_api::common::NamedColor;
 use pumpkin_plugin_api::common::RgbColor;
 
 
+use serde::ser;
 use tracing::*;
 
+#[derive(serde::Deserialize, serde::Serialize)]
+struct PluginConfig {
+    join_message: String,
+}
 
-struct OnPlayerJoin;
+impl Default for PluginConfig {
+    fn default() -> Self {
+        Self {
+            join_message: "{player} joined the server".to_string(),
+        }
+    }
+}
+
+
+struct OnPlayerJoin {
+    join_message: String,
+}
 
 impl EventHandler<PlayerJoinEvent> for OnPlayerJoin {
     fn handle(&self, _server: Server, mut event: EventData<PlayerJoinEvent>) -> EventData<PlayerJoinEvent> {
         info!("Testoksjdksndksanjdkjd");
         let name = event.player.get_name();
+        let text = self.join_message.replace("{player}", &name);
         let message: TextComponent = TextComponent::text(&format!("{} joined the server", name));
         message.color_rgb(RgbColor { r: 0x00, g: 0x99, b: 0xFF });
-        event.join_message = message;
+        event.join_message = TextComponent::text(&text);
         event
     }
 }
@@ -109,8 +130,37 @@ impl Plugin for HelloPlugin {
     fn on_load(&mut self, context: Context) -> pumpkin_plugin_api::Result<()> {
         info!("Hello from the example plugin!");
 
+    
+    fn load_config(context: &Context) -> PluginConfig {
+
+        let data_folder = context.get_data_folder();
+        info!("Data folder path {}", data_folder);
+
+        let config_path = Path::new(&data_folder).join("config.yml");
+
+        if let Ok(contents) = fs::read_to_string(&config_path) {
+            serde_yaml::from_str(&contents).unwrap_or_default()
+
+        } else {
+            let default_config = PluginConfig::default();
+            let _ = fs::create_dir_all(&data_folder);
+            if let Ok(yaml) = serde_yaml::to_string(&default_config) {
+                let _ = fs::write(&config_path, yaml);
+
+            if let Err(e) = fs::create_dir_all(&data_folder) {
+                error!("Failed to create data folder '{}': '{}'", data_folder, e);
+            }
+
+            
+        }
+        default_config
+        }
+    }
+
+        let config = load_config(&context);
+
         context.register_event_handler::<PlayerJoinEvent, _>(
-            OnPlayerJoin,
+            OnPlayerJoin { join_message: config.join_message },
             EventPriority::Normal,
             true,
         )?;
