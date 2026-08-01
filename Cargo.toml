@@ -4,14 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# This is the api crate that makes creating plugins easier, and has wit definitions
-pumpkin-plugin-api = { version = "0.1.0", git = "https://github.com/Pumpkin-MC/Pumpkin", package = "pumpkin-plugin-api" }
+pumpkin = { git = "https://github.com/Pumpkin-MC/Pumpkin" }
+pumpkin-api-macros = { git = "https://github.com/Pumpkin-MC/Pumpkin" }
 tracing = "0.1"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
-
-[build]
-target = "wasm32-wasip2"
+tokio = "1"
 
 [lib] 
 crate-type = ["cdylib"]
